@@ -28,10 +28,10 @@ CREATE TABLE likes_dislikes (
     ON DELETE CASCADE
 );
 
-DROP TABLE users;
+DROP TABLE posts;
 
 SELECT * FROM users;
 
 INSERT INTO users (id, name, email, password, role)
 VALUES
-	('u001', 'Miguel', 'miguel@gmail.com', 'miguel1234', 'ADMIN');
+	('u003', 'Astrodev', 'astrodev@email.com', 'astrodev99', 'ADMIN');
