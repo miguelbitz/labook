@@ -48,4 +48,11 @@ export class PostDatabase extends BaseDatabase {
       .update({ content: newContent, updated_at: updateTime})
       .where({ id })
   }
+
+  public async deletePost(id: string): Promise<void> {
+    await BaseDatabase
+      .connection(PostDatabase.TABLE_POSTS)
+      .del()
+      .where({ id })
+  }
 }

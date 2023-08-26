@@ -59,12 +59,6 @@ export class UserBusiness {
 
     const id = this.idGenerator.generate()
 
-    /* const userDBExists = await this.userDatabase.findUserById(id)
-
-    if (userDBExists) {
-      throw new BadRequestError("'id' já existe")
-    }
- */
     const hashedPassword = await this.hashManager.hash(password)
 
     const newUser = new User(
@@ -105,10 +99,6 @@ export class UserBusiness {
     if (!userDB) {
       throw new NotFoundError("'email' não encontrado")
     }
-
-    /* if (password !== userDB.password) {
-      throw new BadRequestError("'email' ou 'password' incorretos")
-    } */
     
     const hashedPassword = userDB.password
 

@@ -9,6 +9,7 @@ import { TokenManager } from "../services/TokenManager"
 import jwt from 'jsonwebtoken'
 import { EditPostInputDTO, EditPostOutputDTO } from "../dtos/post/editPost.dto"
 import { NotFoundError } from "../errors/NotFoundError"
+import { DeletePostInputDTO, DeletePostOutputDTO } from "../dtos/post/deletePost.dto"
 
 export class PostBusiness {
   constructor(
@@ -117,6 +118,36 @@ export class PostBusiness {
     const output: EditPostOutputDTO = {
       message: "Post editado com sucesso",
       content: content
+    }
+
+    return output;
+  }
+
+  public deletePost = async (
+    input: DeletePostInputDTO
+  ): Promise<DeletePostOutputDTO> => {
+    const { id , token} = input
+
+     const payload = this.tokenManager.getPayload(token);
+
+    if (!payload) {
+        throw new BadRequestError("Token inválido");
+    }
+
+    const postDB = await this.postDatabase.findPostById(id);
+
+    if (!postDB) {
+        throw new NotFoundError("Post não encontrado");
+    }
+
+    if (postDB.creator_id !== payload.id) {
+        throw new BadRequestError("Você não tem permissão para Deletar este post");
+    }
+
+    await this.postDatabase.deletePost(id);
+
+    const output: DeletePostOutputDTO = {
+      message: "Post editado com sucesso",
     }
 
     return output;
