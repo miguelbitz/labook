@@ -1,5 +1,4 @@
 import z from "zod"
-import { PostDetails, PostModel } from "../../models/Post"
 
 export interface CreatePostInputDTO {
   content: string,
@@ -8,7 +7,7 @@ export interface CreatePostInputDTO {
 
 export interface CreatePostOutputDTO {
   message: string,
-  post: string
+  content: string
 }
 
 export const CreatePostSchema = z.object({

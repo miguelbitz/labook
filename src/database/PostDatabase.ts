@@ -39,4 +39,13 @@ export class PostDatabase extends BaseDatabase {
       .connection(PostDatabase.TABLE_POSTS)
       .insert(newPostDB)
   }
+
+  public async editPost(
+    id: string, newContent: string, updateTime: string
+  ): Promise<void> {
+    await BaseDatabase
+      .connection(PostDatabase.TABLE_POSTS)
+      .update({ content: newContent, updated_at: updateTime})
+      .where({ id })
+  }
 }
