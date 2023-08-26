@@ -30,8 +30,7 @@ CREATE TABLE likes_dislikes (
 
 DROP TABLE posts;
 
+DROP TABLE users;
+
 SELECT * FROM users;
 
-INSERT INTO users (id, name, email, password, role)
-VALUES
-	('u003', 'Astrodev', 'astrodev@email.com', 'astrodev99', 'ADMIN');
