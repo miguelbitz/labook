@@ -1,152 +1,90 @@
-import { ProductDatabase } from "../database/UserDatabase"
-import { CreateProductInputDTO, CreateProductOutputDTO } from "../dtos/createProdcut.dto"
-import { EditProductInputDTO, EditProductOutputDTO } from "../dtos/editProduct.dto"
+import { PostDatabase } from "../database/PostDatabase"
+import { UserDatabase } from "../database/UserDatabase"
+import { CreatePostInputDTO, CreatePostOutputDTO } from "../dtos/post/createPost.dto"
+import { GetPostsInputDTO, GetPostsOutputDTO } from "../dtos/post/getPosts.dto"
 import { BadRequestError } from "../errors/BadRequestError"
-import { NotFoundError } from "../errors/NotFoundError"
-import { Product, ProductDB } from "../models/User"
+import { Post } from "../models/Post"
+import { IdGenerator } from "../services/IdGenerator"
+import { TokenManager } from "../services/TokenManager"
+import jwt from 'jsonwebtoken'
 
-export class ProductBusiness {
+export class PostBusiness {
   constructor(
-    private productDatabase: ProductDatabase
+    private postDatabase: PostDatabase,
+    private idGenerator: IdGenerator,
+    private tokenManager: TokenManager,
+    private userDatabase: UserDatabase
   ) { }
 
-  public createProduct = async (input: CreateProductInputDTO): Promise<CreateProductOutputDTO> => {
+  public getPosts = async (
+    input: GetPostsInputDTO
+): Promise<GetPostsOutputDTO> => {
+    const { q, token } = input;
 
-    const { id, name, price } = input
+    const payload = this.tokenManager.getPayload(token);
 
-    const productDBExists = await this.productDatabase.findProductById(id)
-
-    if (productDBExists) {
-      throw new BadRequestError("'id' já existe")
+    if (!payload) {
+        throw new BadRequestError("Token inválido");
     }
 
-    const newProduct = new Product(
+    const postsDB = await this.postDatabase.findPost(q);
+
+    const posts = await Promise.all(postsDB.map(async (postDB) => {
+        const post = new Post(
+            postDB.id,
+            postDB.creator_id,
+            postDB.content,
+            postDB.likes,
+            postDB.dislikes,
+            postDB.created_at,
+            postDB.updated_at,
+        );
+
+        const creatorName = payload.name ?? "Nome Desconhecido";
+        return post.toPostDetails(creatorName);
+    }));
+
+    const output: GetPostsOutputDTO = posts;
+
+    return output;
+}
+
+
+
+  public createPost = async (
+    input: CreatePostInputDTO
+  ): Promise<CreatePostOutputDTO> => {
+    const { content, token } = input
+
+    const payload = this.tokenManager.getPayload(token)
+
+    if (!payload) {
+      throw new BadRequestError("Token inválido");
+    }
+
+    const id = this.idGenerator.generate()
+
+    const creatorId = payload.id ?? "Id Desconhecido";
+
+    const newPost = new Post(
       id,
-      name,
-      price,
+      creatorId,
+      content,
+      0,
+      0,
+      new Date().toISOString(),
       new Date().toISOString()
-    )
+    );
 
-    const newProductDB: ProductDB = {
-      id: newProduct.getId(),
-      name: newProduct.getName(),
-      price: newProduct.getPrice(),
-      created_at: newProduct.getCreatedAt()
+    const newPostDB = newPost.toDBModel()
+    await this.postDatabase.insertPost(newPostDB)
+
+    const output: CreatePostOutputDTO = {
+      message: "Post publicado com sucesso",
+      post: content
     }
 
-    await this.productDatabase.insertProduct(newProductDB)
-
-    const output: CreateProductOutputDTO = {
-      message: "Produto registrado com sucesso",
-      product: {
-        id: newProduct.getId(),
-        name: newProduct.getName(),
-        price: newProduct.getPrice(),
-        createdAt: newProduct.getCreatedAt()
-      }
-    }
-
-    return output
+    return output;
   }
 
-  public getProducts = async (input: any) => {
-    const { q } = input
-
-    const productsDB = await this.productDatabase.findProducts(q)
-
-    const products: Product[] = productsDB.map((productDB) => new Product(
-      productDB.id,
-      productDB.name,
-      productDB.price,
-      productDB.created_at
-    ))
-
-    const output = products.map((product) => ({
-      id: product.getId(),
-      name: product.getName(),
-      price: product.getPrice(),
-      created_at: product.getCreatedAt()
-    }))
-
-    return output
-  }
-
-  public editProduct = async (input: EditProductInputDTO): Promise<EditProductOutputDTO> => {
-
-    const {
-      idToEdit,
-      id,
-      name,
-      price
-    } = input
-
-    const productToEditDB = await this.productDatabase.findProductById(idToEdit)
-
-    if (!productToEditDB) {
-      throw new NotFoundError("'id' para editar não existe")
-    }
-
-    const product = new Product(
-      productToEditDB.id,
-      productToEditDB.name,
-      productToEditDB.price,
-      productToEditDB.created_at
-    )
-
-    id && product.setId(id)
-    name && product.setName(name)
-    price && product.setPrice(price)
-
-    const updatedProductDB: ProductDB = {
-      id: product.getId(),
-      name: product.getName(),
-      price: product.getPrice(),
-      created_at: product.getCreatedAt()
-    }
-
-    await this.productDatabase.updateProduct(idToEdit, updatedProductDB)
-
-    const output: EditProductOutputDTO = {
-      message: "Produto editado com sucesso",
-      product: {
-        id: product.getId(),
-        name: product.getName(),
-        price: product.getPrice(),
-        createdAt: product.getCreatedAt()
-      }
-    }
-
-    return output
-  }
-
-  public deleteProduct = async (input: any) => {
-    const { idToDelete } = input
-
-    const productToDeleteDB = await this.productDatabase.findProductById(idToDelete)
-
-    if (!productToDeleteDB) {
-      throw new NotFoundError("'id' para deletar não existe")
-    }
-
-    const product = new Product(
-      productToDeleteDB.id,
-      productToDeleteDB.name,
-      productToDeleteDB.price,
-      productToDeleteDB.created_at
-    )
-
-    await this.productDatabase.deleteProductById(productToDeleteDB.id)
-
-    const output = {
-      message: "Produto deletado com sucesso",
-      product: {
-        id: product.getId(),
-        name: product.getName(),
-        price: product.getPrice(),
-        createdAt: product.getCreatedAt()
-      }
-    }
-
-    return output
-  }
 }

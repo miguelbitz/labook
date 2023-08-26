@@ -1,78 +1,30 @@
 import { Request, Response } from "express"
-import { ZodError } from "zod"
-import { ProductBusiness } from "../business/UserBusiness"
-import { CreateProductSchema } from "../dtos/createProdcut.dto"
-import { EditProductSchema } from "../dtos/editProduct.dto"
 import { BaseError } from "../errors/BaseError"
+import { ZodError } from "zod"
+import { GetPostsSchema } from "../dtos/post/getPosts.dto"
+import { PostBusiness } from "../business/PostBusiness"
+import { CreatePostSchema } from "../dtos/post/createPost.dto"
 
-export class ProductController {
-  constructor (
-    private productBusiness: ProductBusiness
-  ){}
 
-  public createProduct = async (req: Request, res: Response) => {
+export class PostController {
+  constructor(
+    private postBusiness: PostBusiness
+  ) { }
+
+  public getPosts = async (req: Request, res: Response) => {
     try {
-
-      const input = CreateProductSchema.parse({
-        id: req.body.id,
-        name: req.body.name,
-        price: req.body.price
+      const input = GetPostsSchema.parse({
+        q: req.query.q,
+        token: req.headers.authorization
       })
 
-      
-      const output = await this.productBusiness.createProduct(input)
-
-      res.status(201).send(output)
-    } catch (error) {
-      console.log(error)
-
-      if (error instanceof BaseError) {
-        res.status(error.statusCode).send(error.message)
-      } else {
-        res.status(500).send("Erro inesperado")
-      }
-    }
-  }
-
-  public getProducts = async (req: Request, res: Response) => {
-    try {
-      const input = {
-        q: req.query.q
-      }
-
-      
-      const output = await this.productBusiness.getProducts(input)
+      const output = await this.postBusiness.getPosts(input)
 
       res.status(200).send(output)
     } catch (error) {
       console.log(error)
 
-      if (error instanceof BaseError) {
-        res.status(error.statusCode).send(error.message)
-      } else {
-        res.status(500).send("Erro inesperado")
-      }
-    }
-  }
-
-  public editProduct = async (req: Request, res: Response) => {
-    try {
-
-      const input = EditProductSchema.parse({
-        idToEdit: req.params.id,
-        id: req.body.id,
-        name: req.body.name,
-        price: req.body.price
-      })
-
-      
-      const output = await this.productBusiness.editProduct(input)
-
-      res.status(200).send(output)
-    } catch (error) {
-      console.log(error)
-
-      if(error instanceof ZodError){
+      if (error instanceof ZodError) {
         res.status(400).send(error.issues)
       } else if (error instanceof BaseError) {
         res.status(error.statusCode).send(error.message)
@@ -82,21 +34,23 @@ export class ProductController {
     }
   }
 
-  public deleteProduct = async (req: Request, res: Response) => {
+  public createPost = async (req: Request, res: Response) => {
     try {
 
-      const input = {
-        idToDelete: req.params.id
-      }
+      const input = CreatePostSchema.parse({
+        content: req.body.content,
+        token: req.headers.authorization
+      })
 
-      
-      const output = await this.productBusiness.deleteProduct(input)
+      const output = await this.postBusiness.createPost(input)
 
-      res.status(200).send(output)
+      res.status(201).send(output)
     } catch (error) {
       console.log(error)
 
-      if (error instanceof BaseError) {
+      if (error instanceof ZodError) {
+        res.status(400).send(error.issues)
+      } else if (error instanceof BaseError) {
         res.status(error.statusCode).send(error.message)
       } else {
         res.status(500).send("Erro inesperado")

@@ -1,195 +1,136 @@
 import { UserDatabase } from "../database/UserDatabase"
-import { SignUpInputDTO, SignUpOutputDTO } from "../dtos/signUp"
+import { GetUsersInputDTO, GetUsersOutputDTO } from "../dtos/user/getUsers.dto"
+import { LoginInputDTO, LoginOutputDTO } from "../dtos/user/login.dto"
+import { SignupInputDTO, SignupOutputDTO } from "../dtos/user/signup.dto"
 import { BadRequestError } from "../errors/BadRequestError"
 import { NotFoundError } from "../errors/NotFoundError"
-import { User, UserDB } from "../models/User"
+import { USER_ROLES, User } from "../models/User"
+import { HashManager } from "../services/HashManager"
+import { IdGenerator } from "../services/IdGenerator"
+import { TokenManager, TokenPayload } from "../services/TokenManager"
 
 export class UserBusiness {
   constructor(
-    private userDatabase: UserDatabase
+    private userDatabase: UserDatabase,
+    private idGenerator: IdGenerator,
+    private tokenManager: TokenManager,
+    private hashManager: HashManager
   ) { }
 
-  public signUp = async (input: SignUpInputDTO): Promise<SignUpOutputDTO> => {
-    const { id,  name, email, password, role } = input
+  public getUsers = async (
+    input: GetUsersInputDTO
+  ): Promise<GetUsersOutputDTO> => {
+    const { q, token } = input
 
-    const userDBExists = await this.userDatabase.checkEmailIsValid(email)
+    const payload = this.tokenManager.getPayload(token)
+
+    if(payload === null){
+      throw new BadRequestError("token invalido")
+    }
+
+    if(payload.role !== USER_ROLES.ADMIN){
+      throw new BadRequestError("somente admins podem acessar esse recurso")
+    }
+
+    const usersDB = await this.userDatabase.findUsers(q)
+
+    const users = usersDB.map((userDB) => {
+      const user = new User(
+        userDB.id,
+        userDB.name,
+        userDB.email,
+        userDB.password,
+        userDB.role,
+        userDB.created_at
+      )
+
+      return user.toBusinessModel()
+    })
+
+    const output: GetUsersOutputDTO = users
+
+    return output
+  }
+
+  public signup = async (
+    input: SignupInputDTO
+  ): Promise<SignupOutputDTO> => {
+    const { name, email, password } = input
+
+    const id = this.idGenerator.generate()
+
+    /* const userDBExists = await this.userDatabase.findUserById(id)
 
     if (userDBExists) {
-      throw new BadRequestError("'email' já existe")
+      throw new BadRequestError("'id' já existe")
     }
+ */
+    const hashedPassword = await this.hashManager.hash(password)
 
     const newUser = new User(
       id,
       name,
       email,
-      password,
-      role,
+      hashedPassword,
+      USER_ROLES.NORMAL,
       new Date().toISOString()
     )
 
-    const newUserDB: UserDB = {
+    const newUserDB = newUser.toDBModel()
+    await this.userDatabase.insertUser(newUserDB)
+
+    const tokenPayload: TokenPayload = {
       id: newUser.getId(),
       name: newUser.getName(),
-      email: newUser.getEmail(),
-      password: newUser.getPassword(),
-      role: newUser.getRole(),
-      created_at: newUser.getCreatedAt()
+      role: newUser.getRole()
     }
 
-    await this.userDatabase.signUp(newUserDB)
+    const token = this.tokenManager.createToken(tokenPayload)
 
-    const output: SignUpOutputDTO = {
-      message: "Usuario cadastrado com sucesso",
-      user: {
-        id: newUser.getId(),
-        name: newUser.getName(),
-        email: newUser.getEmail(),
-        password: newUser.getPassword(),
-        role: newUser.getRole(),
-        createdAt: newUser.getCreatedAt()
-      }
+    const output: SignupOutputDTO = {
+      message: "Cadastro realizado com sucesso",
+      token
+    }
+
+    return output
+  }
+
+  public login = async (
+    input: LoginInputDTO
+  ): Promise<LoginOutputDTO> => {
+    const { email, password } = input
+
+    const userDB = await this.userDatabase.findUserByEmail(email)
+
+    if (!userDB) {
+      throw new NotFoundError("'email' não encontrado")
+    }
+
+    /* if (password !== userDB.password) {
+      throw new BadRequestError("'email' ou 'password' incorretos")
+    } */
+    
+    const hashedPassword = userDB.password
+
+    const isPasswordCorrect = await this.hashManager.compare(password, hashedPassword)
+
+    if (!isPasswordCorrect) {
+      throw new BadRequestError("'email' ou 'password' incorretos")
+    }
+
+    const tokenPayload: TokenPayload = {
+      id: userDB.id,
+      name:  userDB.name,
+      role:  userDB.role
+    }
+
+    const token = this.tokenManager.createToken(tokenPayload)
+
+    const output: LoginOutputDTO = {
+      message: "Login realizado com sucesso",
+      token
     }
 
     return output
   }
 }
-  /* public createProduct = async (input: CreateProductInputDTO): Promise<CreateProductOutputDTO> => {
-
-    const { id, name, price } = input
-
-    const productDBExists = await this.userDatabase.findProductById(id)
-
-    if (productDBExists) {
-      throw new BadRequestError("'id' já existe")
-    }
-
-    const newProduct = new Product(
-      id,
-      name,
-      price,
-      new Date().toISOString()
-    )
-
-    const newProductDB: ProductDB = {
-      id: newProduct.getId(),
-      name: newProduct.getName(),
-      price: newProduct.getPrice(),
-      created_at: newProduct.getCreatedAt()
-    }
-
-    await this.userDatabase.insertProduct(newProductDB)
-
-    const output: CreateProductOutputDTO = {
-      message: "Produto registrado com sucesso",
-      product: {
-        id: newProduct.getId(),
-        name: newProduct.getName(),
-        price: newProduct.getPrice(),
-        createdAt: newProduct.getCreatedAt()
-      }
-    }
-
-    return output
-  }
-
-  public getProducts = async (input: any) => {
-    const { q } = input
-
-    const productsDB = await this.userDatabase.findProducts(q)
-
-    const products: Product[] = productsDB.map((productDB) => new Product(
-      productDB.id,
-      productDB.name,
-      productDB.price,
-      productDB.created_at
-    ))
-
-    const output = products.map((product) => ({
-      id: product.getId(),
-      name: product.getName(),
-      price: product.getPrice(),
-      created_at: product.getCreatedAt()
-    }))
-
-    return output
-  }
-
-  public editProduct = async (input: EditProductInputDTO): Promise<EditProductOutputDTO> => {
-
-    const {
-      idToEdit,
-      id,
-      name,
-      price
-    } = input
-
-    const productToEditDB = await this.userDatabase.findProductById(idToEdit)
-
-    if (!productToEditDB) {
-      throw new NotFoundError("'id' para editar não existe")
-    }
-
-    const product = new Product(
-      productToEditDB.id,
-      productToEditDB.name,
-      productToEditDB.price,
-      productToEditDB.created_at
-    )
-
-    id && product.setId(id)
-    name && product.setName(name)
-    price && product.setPrice(price)
-
-    const updatedProductDB: ProductDB = {
-      id: product.getId(),
-      name: product.getName(),
-      price: product.getPrice(),
-      created_at: product.getCreatedAt()
-    }
-
-    await this.userDatabase.updateProduct(idToEdit, updatedProductDB)
-
-    const output: EditProductOutputDTO = {
-      message: "Produto editado com sucesso",
-      product: {
-        id: product.getId(),
-        name: product.getName(),
-        price: product.getPrice(),
-        createdAt: product.getCreatedAt()
-      }
-    }
-
-    return output
-  }
-
-  public deleteProduct = async (input: any) => {
-    const { idToDelete } = input
-
-    const productToDeleteDB = await this.userDatabase.findProductById(idToDelete)
-
-    if (!productToDeleteDB) {
-      throw new NotFoundError("'id' para deletar não existe")
-    }
-
-    const product = new Product(
-      productToDeleteDB.id,
-      productToDeleteDB.name,
-      productToDeleteDB.price,
-      productToDeleteDB.created_at
-    )
-
-    await this.userDatabase.deleteProductById(productToDeleteDB.id)
-
-    const output = {
-      message: "Produto deletado com sucesso",
-      product: {
-        id: product.getId(),
-        name: product.getName(),
-        price: product.getPrice(),
-        createdAt: product.getCreatedAt()
-      }
-    }
-
-    return output
-  } */
-

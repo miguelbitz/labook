@@ -1,17 +1,23 @@
 import express from "express"
-import { ProductBusiness } from "../business/UserBusiness"
-import { ProductController } from "../controller/UserController"
-import { ProductDatabase } from "../database/UserDatabase"
+import { PostBusiness } from "../business/PostBusiness"
+import { PostController } from "../controller/PostController"
+import { PostDatabase } from "../database/PostDatabase"
+import { UserDatabase } from "../database/UserDatabase"
+import { IdGenerator } from "../services/IdGenerator"
+import { TokenManager } from "../services/TokenManager"
 
-export const productRouter = express.Router()
+export const postRouter = express.Router()
 
-const productController = new ProductController(
-    new ProductBusiness(
-        new ProductDatabase()
+const postController = new PostController(
+    new PostBusiness(
+        new PostDatabase(),
+        new IdGenerator(),
+        new TokenManager(),
+        new UserDatabase()
     )
 )
 
-productRouter.get("/", productController.getProducts)
-productRouter.post("/", productController.createProduct)
-productRouter.put("/:id", productController.editProduct)
-productRouter.delete("/:id", productController.deleteProduct)
+postRouter.get("/", postController.getPosts)
+postRouter.post("/", postController.createPost)
+//postRouter.put("/:id", postController.editPost)
+//postRouter.delete("/:id", postController.deletePost)
