@@ -7,6 +7,8 @@ import { Post } from "../models/Post"
 import { IdGenerator } from "../services/IdGenerator"
 import { TokenManager } from "../services/TokenManager"
 import jwt from 'jsonwebtoken'
+import { EditPostInputDTO, EditPostOutputDTO } from "../dtos/post/editPost.dto"
+import { NotFoundError } from "../errors/NotFoundError"
 
 export class PostBusiness {
   constructor(
@@ -81,7 +83,40 @@ export class PostBusiness {
 
     const output: CreatePostOutputDTO = {
       message: "Post publicado com sucesso",
-      post: content
+      content: content
+    }
+
+    return output;
+  }
+
+  public editPost = async (
+    input: EditPostInputDTO
+  ): Promise<EditPostOutputDTO> => {
+    const { id, content, token } = input
+
+     const payload = this.tokenManager.getPayload(token);
+
+    if (!payload) {
+        throw new BadRequestError("Token inválido");
+    }
+
+    const postDB = await this.postDatabase.findPostById(id);
+
+    if (!postDB) {
+        throw new NotFoundError("Post não encontrado");
+    }
+
+    if (postDB.creator_id !== payload.id) {
+        throw new BadRequestError("Você não tem permissão para editar este post");
+    }
+
+    const updateTime = new Date().toISOString()
+
+    await this.postDatabase.editPost(id, content, updateTime)
+
+    const output: EditPostOutputDTO = {
+      message: "Post editado com sucesso",
+      content: content
     }
 
     return output;
