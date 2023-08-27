@@ -72,7 +72,7 @@ export class PostController {
 
       const output = await this.postBusiness.editPost(input)
 
-      res.status(201).send(output)
+      res.status(200).send(output)
     } catch (error) {
       console.log(error)
 
@@ -96,7 +96,7 @@ export class PostController {
 
       const output = await this.postBusiness.deletePost(input)
 
-      res.status(201).send(output)
+      res.status(200).send(output)
     } catch (error) {
       console.log(error)
 
