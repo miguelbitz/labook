@@ -91,7 +91,7 @@ O projeto aborda as seguintes ferramentas:
 # Exemplo de Requisições de Posts
 ## Get Posts
 ```javascript
-// request GET /posts
+// request GET /posts Retorna todos posts
 // headers.authorization = "token jwt"
 
 // response
@@ -123,36 +123,38 @@ O projeto aborda as seguintes ferramentas:
     }
 ]
 ```
-## SignUp
+## Create Post
 ```javascript
-// request POST /users/signup Cadastra novo usuario
+// request POST /posts Cria novo post
+// headers.authorization = "token jwt"
 // body JSON
 {
-    "name": "Gica",
-    "email": "gica@gmail.com",
-    "password": "gica1234"
+    "content": "vamo pra cima!"
 }
 
 // response
 // status 201 CREATED
-{
-  token: "um token jwt"
-}
 ```
-## Login
+## Edit Post
 ```javascript
-// request POST /users/login Gerar token para logar
+// request PUT /posts/:id Edita conteudo do post
+// headers.authorization = "token jwt"
 // body JSON
 {
-    "email": "miguel@gmail.com",
-    "password": "miguel1234"
+    "content": "Partiu happy hour lá no point de sempre!"
 }
 
 // response
 // status 200 OK
-{
-  token: "um token jwt"
-}
+```
+
+## Delete Post
+```javascript
+// request DELETE /posts/:id Deleta post
+// headers.authorization = "token jwt"
+
+// response
+// status 200 OK
 ```
 
 ## Documentação do Postman
