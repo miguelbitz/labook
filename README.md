@@ -156,9 +156,35 @@ O projeto aborda as seguintes ferramentas:
 // response
 // status 200 OK
 ```
+# Exemplo de Requisições de Like/Dislike
+## LikeDislike
+### Like (funcionalidade 1)
+```javascript
+// request PUT /posts/:id/like
+// headers.authorization = "token jwt"
+// body JSON
+{
+    "like": true
+}
+
+// response
+// status 200 OK
+```
+### Dislike (funcionalidade 2)
+```javascript
+// request PUT /posts/:id/like
+// headers.authorization = "token jwt"
+// body JSON
+{
+    "like": false
+}
+
+// response
+// status 200 OK
+```
 
 ## Documentação do Postman
-[Link da API no POSTMAN](https://documenter.getpostman.com/view/26594213/2s93sjT8SX)
+[Link da API no POSTMAN](https://documenter.getpostman.com/view/26594213/2s9Y5YS2qM)
 
 # Criado por:
 ## Miguel Alves
