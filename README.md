@@ -54,24 +54,22 @@ O projeto aborda as seguintes ferramentas:
   token: "um token jwt"
 }
 ```
-`POST /users/signup`: Cadastra novo usuario
+
 ```javascript
-// request GET /users Retorna todos usuários cadastrados
-// headers.authorization = "token jwt"
+// request POST /users/signup Cadastra novo usuario
 // body JSON
 {
-    "id":"u005",
-    "name": "Ciclano",
-    "email": "ciclano@123",
-    "password": "1234"
+    "name": "Gica",
+    "email": "gica@gmail.com",
+    "password": "gica1234"
 }
-```
-```
-{
-    Cadastro realizado com sucesso
-}
-```
 
+// response
+// status 201 CREATED
+{
+  token: "um token jwt"
+}
+```
 `DELETE /users/:id`: Deleta usuário pela ID.
 
 ```
