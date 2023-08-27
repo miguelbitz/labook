@@ -6,7 +6,6 @@ import { BadRequestError } from "../errors/BadRequestError"
 import { Post } from "../models/Post"
 import { IdGenerator } from "../services/IdGenerator"
 import { TokenManager } from "../services/TokenManager"
-import jwt from 'jsonwebtoken'
 import { EditPostInputDTO, EditPostOutputDTO } from "../dtos/post/editPost.dto"
 import { NotFoundError } from "../errors/NotFoundError"
 import { DeletePostInputDTO, DeletePostOutputDTO } from "../dtos/post/deletePost.dto"
@@ -16,42 +15,40 @@ export class PostBusiness {
     private postDatabase: PostDatabase,
     private idGenerator: IdGenerator,
     private tokenManager: TokenManager,
-    private userDatabase: UserDatabase
   ) { }
 
   public getPosts = async (
     input: GetPostsInputDTO
-): Promise<GetPostsOutputDTO> => {
+  ): Promise<GetPostsOutputDTO> => {
     const { q, token } = input;
 
     const payload = this.tokenManager.getPayload(token);
 
     if (!payload) {
-        throw new BadRequestError("Token inválido");
+      throw new BadRequestError("Token inválido");
     }
 
     const postsDB = await this.postDatabase.findPost(q);
 
     const posts = await Promise.all(postsDB.map(async (postDB) => {
-        const post = new Post(
-            postDB.id,
-            postDB.creator_id,
-            postDB.content,
-            postDB.likes,
-            postDB.dislikes,
-            postDB.created_at,
-            postDB.updated_at,
-        );
+      const post = new Post(
+        postDB.id,
+        postDB.creator_id,
+        postDB.content,
+        postDB.likes,
+        postDB.dislikes,
+        postDB.created_at,
+        postDB.updated_at,
+      );
 
-        const creatorName = payload.name ?? "Nome Desconhecido";
-        return post.toPostDetails(creatorName);
+      const creatorName = payload.name ?? "Nome Desconhecido";
+      return post.toPostDetails(creatorName);
     }));
 
     const output: GetPostsOutputDTO = posts;
 
     return output;
-}
-
+  }
 
 
   public createPost = async (
@@ -95,20 +92,20 @@ export class PostBusiness {
   ): Promise<EditPostOutputDTO> => {
     const { id, content, token } = input
 
-     const payload = this.tokenManager.getPayload(token);
+    const payload = this.tokenManager.getPayload(token);
 
     if (!payload) {
-        throw new BadRequestError("Token inválido");
+      throw new BadRequestError("Token inválido");
     }
 
     const postDB = await this.postDatabase.findPostById(id);
 
     if (!postDB) {
-        throw new NotFoundError("Post não encontrado");
+      throw new NotFoundError("Post não encontrado");
     }
 
     if (postDB.creator_id !== payload.id) {
-        throw new BadRequestError("Você não tem permissão para editar este post");
+      throw new BadRequestError("Você não tem permissão para editar este post");
     }
 
     const updateTime = new Date().toISOString()
@@ -126,31 +123,31 @@ export class PostBusiness {
   public deletePost = async (
     input: DeletePostInputDTO
   ): Promise<DeletePostOutputDTO> => {
-    const { id , token} = input
+    const { id, token } = input
 
-     const payload = this.tokenManager.getPayload(token);
+    const payload = this.tokenManager.getPayload(token);
 
     if (!payload) {
-        throw new BadRequestError("Token inválido");
+      throw new BadRequestError("Token inválido");
     }
 
     const postDB = await this.postDatabase.findPostById(id);
 
     if (!postDB) {
-        throw new NotFoundError("Post não encontrado");
+      throw new NotFoundError("Post não encontrado");
     }
 
     if (postDB.creator_id !== payload.id) {
-        throw new BadRequestError("Você não tem permissão para Deletar este post");
+      throw new BadRequestError("Você não tem permissão para Deletar este post");
     }
 
     await this.postDatabase.deletePost(id);
 
     const output: DeletePostOutputDTO = {
-      message: "Post editado com sucesso",
+      message: "Post deletado com sucesso",
     }
 
     return output;
-  }
+  } 
 
 }

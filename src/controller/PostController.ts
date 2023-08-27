@@ -6,6 +6,7 @@ import { PostBusiness } from "../business/PostBusiness"
 import { CreatePostSchema } from "../dtos/post/createPost.dto"
 import { EditPostSchema } from "../dtos/post/editPost.dto"
 import { DeletePostSchema } from "../dtos/post/deletePost.dto"
+import { LikeDislikePostSchema } from "../dtos/post/likeDislikePost.dto"
 
 
 export class PostController {
@@ -108,4 +109,5 @@ export class PostController {
       }
     }
   }
+
 }

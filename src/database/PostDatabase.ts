@@ -55,4 +55,5 @@ export class PostDatabase extends BaseDatabase {
       .del()
       .where({ id })
   }
+
 }
